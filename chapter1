@@ -1,0 +1,160 @@
+#include <iostream>
+#include <iomanip>
+#include <fstream>
+#include <cstdlib>
+#include <unistd.h>
+using namespace std;
+
+struct Passenger {
+    string name;
+    string id;
+    string fromPlace;
+    string toPlace;
+    int departDay, departMonth, departYear;
+    int returnDay, returnMonth, returnYear;
+    char seatType;
+    double totalPrice;
+};
+
+void printSeat(char seatType, int seatNumber) {
+    string classType = (seatType == 'F') ? "First Class" : "Economy Class";
+    cout << "Seat " << seatNumber + 1 << ", " << classType << endl;
+}
+
+double calculatePrice(char seatType) {
+    return (seatType == 'F') ? 38.0 : 20.0; // Update based on your desired seat fare
+}
+
+void writeToFile(const Passenger &passenger) {
+    const string filePath = "/Users/YourUsername/Desktop/PassengerDetails.txt"; // Update YourUsername with your actual username
+    ofstream outFile(filePath); // Open the file in append mode
+    if (outFile.is_open()) {
+        outFile << "Passenger Details:" << endl;
+        outFile << "Name: " << passenger.name << endl;
+        outFile << "Identification ID: " << passenger.id << endl;
+        outFile << "From: " << passenger.fromPlace << endl;
+        outFile << "To: " << passenger.toPlace << endl;
+        outFile << "Departure Date: " << setw(2) << setfill('0') << passenger.departDay << "/"
+                << setw(2) << setfill('0') << passenger.departMonth << "/"
+                << passenger.departYear << endl;
+        outFile << "Return Date: " << setw(2) << setfill('0') << passenger.returnDay << "/"
+                << setw(2) << setfill('0') << passenger.returnMonth << "/"
+                << passenger.returnYear << endl;
+        outFile << "Seat: ";
+        printSeat(passenger.seatType, 0); // Assume seat number is always 1 for simplicity
+        outFile << "Total Price: RM " << fixed << setprecision(2) << passenger.totalPrice << endl;
+        outFile << "------------------------------------------" << endl;
+        outFile.close();
+
+        // Check if the file is created successfully
+        if (access(filePath.c_str(), F_OK) != -1) {
+            // Open the file with the default text editor (TextEdit)
+            system(("open -e " + filePath).c_str());
+        } else {
+            cerr << "Error opening file: " << strerror(errno) << endl;
+        }
+    } else {
+        cerr << "Error opening file for writing: " << strerror(errno) << endl;
+    }
+}
+
+int main() {
+    const int firstClass = 10;
+    const int economyClass = 30;
+    bool firstSeats[firstClass] = {};
+    bool economySeats[economyClass] = {};
+
+    char continueOption = 'Y'; // Initialize to 'Y' before the loop
+
+    while (continueOption == 'Y' || continueOption == 'y') {
+        Passenger passenger;
+
+        cout << "\n.........................................................." << endl;
+        cout << "\t\t\t\tWELCOME TO MAYFLOWER AIRLINES" << endl;
+        cout << ".........................................................." << endl;
+        cout << "\t\t\tPlease Enter Passenger Details Below" << endl;
+        cout << "Name: ";
+        cin >> passenger.name;
+        cout << "Identification ID: ";
+        cin >> passenger.id;
+        cout << ".........................................................." << endl;
+        cout << "\t\t\tPlease Enter Your Desired Destination" << endl;
+        cout << "From: ";
+        cin >> passenger.fromPlace;
+        cout << "To: ";
+        cin >> passenger.toPlace;
+        cout << "Departure Date (DD MM YYYY): ";
+        cin >> passenger.departDay >> passenger.departMonth >> passenger.departYear;
+        cout << "Return Date (DD MM YYYY): ";
+        cin >> passenger.returnDay >> passenger.returnMonth >> passenger.returnYear;
+        cout << "-----------------------------------------------------------" << endl;
+
+        // Reset seat assignment for each new passenger
+        fill_n(firstSeats, firstClass, false);
+        fill_n(economySeats, economyClass, false);
+
+        int assignedSeats = 0;
+
+        // start taking passengers
+        if (assignedSeats < (firstClass + economyClass)) {
+            char seatType;
+            cout << "Please type F for First Class or E for Economy Class: ";
+            cin >> seatType;
+
+            int seatNumber;
+
+            if (seatType == 'F') {
+                for (int i = 0; i < firstClass; ++i) {
+                    if (!firstSeats[i]) {
+                        firstSeats[i] = true;
+                        seatNumber = i;
+                        break;
+                    }
+                }
+            } else {
+                for (int i = 0; i < economyClass; ++i) {
+                    if (!economySeats[i]) {
+                        economySeats[i] = true;
+                        seatNumber = i;
+                        break;
+                    }
+                }
+            }
+            assignedSeats++;
+
+            cout << "-----------------------------------------------------------" << endl;
+            cout << "\t\t\t\t\tPassenger Details" << endl;
+            cout << "Name: " << passenger.name << endl;
+            cout << "Identification ID: " << passenger.id << endl;
+            cout << "From: " << passenger.fromPlace << endl;
+            cout << "To: " << passenger.toPlace << endl;
+            cout << "Departure Date: " << setw(2) << setfill('0') << passenger.departDay << "/"
+                 << setw(2) << setfill('0') << passenger.departMonth << "/"
+                 << passenger.departYear << endl;
+            cout << "Return Date: " << setw(2) << setfill('0') << passenger.returnDay << "/"
+                 << setw(2) << setfill('0') << passenger.returnMonth << "/"
+                 << passenger.returnYear << endl;
+            printSeat(seatType, seatNumber);
+            cout << "-----------------------------------------------------------" << endl;
+
+            char newPassengerOption;
+            cout << "Do you want to enter details for a new passenger? (Y/N): ";
+            cin >> newPassengerOption;
+            cout << "-----------------------------------------------------------" << endl;
+
+            if (newPassengerOption != 'Y' && newPassengerOption != 'y') {
+                break; // Exit the seat assignment loop if the user does not want to continue with a new passenger
+            }
+
+            passenger.totalPrice = calculatePrice(passenger.seatType);
+            cout << "Total Price: RM " << fixed << setprecision(2) << passenger.totalPrice << endl;
+
+            // Write passenger details to a text file
+            writeToFile(passenger);
+
+            cout << "-------------------------------------------------------------" << endl;
+        }
+    }
+    cout << "\n\t\tThank you for choosing Mayflower Airlines\n" << endl;
+    return 0;
+}
